@@ -8,11 +8,11 @@ VPNSUBNET="10.$((RANDOM%=255)).$((RANDOM%=255)).0"
 VPNMASK="255.255.255.192"
 
 msg_red() {
-    echo -e "\033[31;1m $1\033[0m";
+    echo -e "\033[31;1m$1\033[0m";
 }
 
 msg_yellow () {
-    echo -e "\033[33;1m $1\033[0m";
+    echo -e "\033[33;1m$1\033[0m";
 }
 
 #ovpn path test
@@ -35,22 +35,22 @@ cd $TEMPDIR
 
 
 
-msg_usefule () {
-    msg_red "iptables commands below may be useful:"
+msg_useful () {
+    msg_yellow "iptables commands below may be useful:"
     echo
-    echo "iptables -A INPUT -p udp --dport $PORT -j ACCEPT"
-    echo "iptables -A FORWARD -i tun+ -j ACCEPT"
-    echo "iptables -t nat -A POSTROUTING -s $VPNSUBNET/24 -j SNAT --to-source $SERVERIP"
+    echo "    iptables -A INPUT -p udp --dport $PORT -j ACCEPT"
+    echo "    iptables -A FORWARD -i tun+ -j ACCEPT"
+    echo "    iptables -t nat -A POSTROUTING -s $VPNSUBNET/24 -j SNAT --to-source $SERVERIP"
 }
 
 
-notify () {
-    msg_red "Working Dir: $TEMPDIR"
-    msg_red "VPN Network: $VPNSUBNET"
-    msg_red "SERVERIP: $SERVERIP"
-    msg_red "PORT: $PORT"
+menu () {
+    msg_yellow "Working Dir: $TEMPDIR"
+    msg_yellow "VPN Network: $VPNSUBNET"
+    msg_yellow "SERVERIP: $SERVERIP"
+    msg_yellow "PORT: $PORT"
     echo 
-    echo "choose: 
+    echo "Choose: 
     1) change SERVERIP
     2) change PORT
     3) build server keys
@@ -83,7 +83,7 @@ if [[ -f $ALLTAREDCONF ]]; then
     export_default
 else
     msg_yellow "New config is to be generated."
-    msg_red "Enter your VPN name:"
+    msg_yellow "Enter your VPN name:"
     read VPN_NAME
 
     cp -r $EASYRSA $TEMPDIR/easy-rsa
@@ -175,18 +175,27 @@ build_client () {
 }
 
 while true; do
-    notify
+    menu
     read CHOOSE
     case "$CHOOSE" in
       1)
-          msg_yellow "Enter Your Server IP:"
+          msg_yellow "Enter Your Server IP/Hostname (For client use):"
           read SERVERIP
           save_variables
           ;;
       2)
-          msg_yellow "Enter Your VPN Service PORT:"
-          read PORT
-          save_variables
+          while true; do
+              msg_yellow "Enter Service PORT You want to listen to (udp):"
+              read in_port
+              if ! [[ $in_port -lt 65535 && $in_port -gt 1 ]]; then
+                  msg_red "--------->  Wrong number: '$in_port'. Port must between 1 and 65535"
+              else
+                  PORT=$in_port
+                  save_variables
+                  break
+              fi
+          done
+
           ;;
       3)
           build_server
@@ -198,13 +207,13 @@ while true; do
           cd $TEMPDIR
           TAR=/tmp/$VPN_NAME-all.tar.gz
           tar cfz $TAR .
-          msg_red "All works saved in '$TAR'"
-          msg_red "Working Dir: $TEMPDIR"
-          msg_yellow "Packed config is ready: "
+          msg_yellow "All works saved in '$TAR'"
+          msg_yellow "Working Dir: $TEMPDIR"
+          msg_yellow "Packages are ready: "
           ls $TEMPDIR/*.tar.gz
-          msg_red "Save the this files to a safe place."
+          msg_red "Save them to a safe place."
           echo 
-          msg_usefule
+          msg_useful
           echo 
           echo
           exit 0
