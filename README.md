@@ -1,4 +1,8 @@
-much-easier-rsa-for-openvpn
+Much-easier-rsa for Openvpn
 ===========================
 
-wrapper script for easy-rsa and openvpn, create a package of ready-to-run openvpn configure for both server and clients in extremely simple steps.
+A wrapper script for easy-rsa and openvpn, creates a **ready-to-run** configure tar for both server and client whthin extremely simple steps.
+
+All those config files are based on examples that ship together within your distribution.
+
+![](http://apt-blog.net/wp-content/uploads/2012/05/ovpn_menu.png)
