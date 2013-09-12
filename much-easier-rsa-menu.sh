@@ -27,13 +27,9 @@ if [[ ! -d $OPENVPNEXAMPLE ]] || [[ ! -d $EASYRSA ]]; then
     fi
 fi
 
-
-ALLTAREDCONF=$1
-
-TEMPDIR=`mktemp -d`
+ALLTAREDCONF=$(realpath $1)
+TEMPDIR=$(mktemp -d)
 cd $TEMPDIR
-
-
 
 msg_useful () {
     msg_yellow "iptables commands below may be useful:"
