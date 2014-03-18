@@ -1,38 +1,53 @@
 #!/bin/bash
 
-OPENVPNEXAMPLE="/usr/share/openvpn/examples/"
-EASYRSA="/usr/share/openvpn/easy-rsa/"
+OPENVPNEXAMPLE_LIST="/usr/share/openvpn/examples/ /usr/share/doc/openvpn/examples/sample-config-files/"
+EASYRSA_LIST="/usr/share/easy-rsa/ /usr/share/doc/openvpn/examples/easy-rsa/2.0/"
+
 PORT="9812"
 SERVERIP="4.3.2.1"
 VPNSUBNET="10.$((RANDOM%=255)).$((RANDOM%=255)).0"
 VPNMASK="255.255.255.192"
 
-msg_red() {
-    echo -e "\033[31;1m$1\033[0m";
+
+msg_warn () {
+    echo -e "$(tput bold)$(tput setaf 1)$*$(tput sgr0)"
 }
 
-msg_yellow () {
-    echo -e "\033[33;1m$1\033[0m";
+msg_error_exit () {
+    echo -e "$(tput bold)$(tput setaf 1)$*$(tput sgr0)"
+    exit 1
 }
 
-#ovpn path test
+msg_bold () {
+    echo -e "$(tput bold)$*$(tput sgr0)"
+}
 
-if [[ ! -d $OPENVPNEXAMPLE ]] || [[ ! -d $EASYRSA ]]; then
 
-    #ubuntu
-    OPENVPNEXAMPLE="/usr/share/doc/openvpn/examples/sample-config-files/"
-    EASYRSA="/usr/share/doc/openvpn/examples/easy-rsa/2.0/"
-    if [[ ! -d $OPENVPNEXAMPLE ]] || [[ ! -d $EASYRSA ]]; then
-        msg_red "OpenVPN Example/Easy-rsa not found, edit script for a correnct path."
+#path test
+for P in $OPENVPNEXAMPLE_LIST; do
+    if [[ -d $P ]]; then
+        OPENVPNEXAMPLE=$P
+        break
     fi
-fi
+done
+
+for P in $EASYRSA_LIST; do
+    if [[ -d $P ]]; then
+        EASYRSA=$P
+        break
+    fi
+done
+
+[[ -v OPENVPNEXAMPLE && -v EASYRSA ]] || msg_error_exit "Fail to find openvpn example or easy-rsa."
+
 
 ALLTAREDCONF=$(realpath $1)
+
 TEMPDIR=$(mktemp -d)
 cd $TEMPDIR
 
 msg_useful () {
-    msg_yellow "iptables commands below may be useful:"
+    msg_bold "iptables commands below may be useful:"
     echo
     echo "    iptables -A INPUT -p udp --dport $PORT -j ACCEPT"
     echo "    iptables -A FORWARD -i tun+ -j ACCEPT"
@@ -41,10 +56,10 @@ msg_useful () {
 
 
 menu () {
-    msg_yellow "Working Dir: $TEMPDIR"
-    msg_yellow "VPN Network: $VPNSUBNET"
-    msg_yellow "SERVERIP: $SERVERIP"
-    msg_yellow "PORT: $PORT"
+    msg_bold "Working Dir: $TEMPDIR"
+    msg_bold "VPN Network: $VPNSUBNET"
+    msg_bold "SERVERIP: $SERVERIP"
+    msg_bold "PORT: $PORT"
     echo 
     echo "Choose: 
     1) change SERVERIP
@@ -78,8 +93,8 @@ if [[ -f $ALLTAREDCONF ]]; then
     source vars
     export_default
 else
-    msg_yellow "New config is to be generated."
-    msg_yellow "Enter your VPN name:"
+    msg_bold "New config is to be generated."
+    msg_bold "Enter your VPN name:"
     read VPN_NAME
 
     cp -r $EASYRSA $TEMPDIR/easy-rsa
@@ -175,16 +190,16 @@ while true; do
     read CHOOSE
     case "$CHOOSE" in
       1)
-          msg_yellow "Enter Your Server IP/Hostname (For client use):"
+          msg_bold "Enter Your Server IP/Hostname (For client use):"
           read SERVERIP
           save_variables
           ;;
       2)
           while true; do
-              msg_yellow "Enter Service PORT You want to listen to (udp):"
+              msg_bold "Enter Service PORT You want to listen to (udp):"
               read in_port
               if ! [[ $in_port -lt 65535 && $in_port -gt 1 ]]; then
-                  msg_red "--------->  Wrong number: '$in_port'. Port must between 1 and 65535"
+                  msg_warn "--------->  Wrong number: '$in_port'. Port must between 1 and 65535"
               else
                   PORT=$in_port
                   save_variables
@@ -203,11 +218,11 @@ while true; do
           cd $TEMPDIR
           TAR=/tmp/$VPN_NAME-all.tar.gz
           tar cfz $TAR .
-          msg_yellow "All works saved in '$TAR'"
-          msg_yellow "Working Dir: $TEMPDIR"
-          msg_yellow "Packages are ready: "
+          msg_bold "All works saved in '$TAR'"
+          msg_bold "Working Dir: $TEMPDIR"
+          msg_bold "Packages are ready: "
           ls $TEMPDIR/*.tar.gz
-          msg_red "Save them to a safe place."
+          msg_warn "Save them to a safe place."
           echo 
           msg_useful
           echo 
