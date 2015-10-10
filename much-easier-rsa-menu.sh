@@ -145,7 +145,7 @@ build_server () {
 
     mkdir $SVRNAME
     mv server.conf $SVRNAME
-    cp easy-rsa/keys/{dh1024.pem,ta.key,ca.crt,$SVRNAME.crt,$SVRNAME.key} $SVRNAME
+    cp easy-rsa/keys/{dh*.pem,ta.key,ca.crt,$SVRNAME.crt,$SVRNAME.key} $SVRNAME
     tar cvfz $SVRNAME.tar.gz $SVRNAME
 
     echo -e "\033[0m";
@@ -178,7 +178,7 @@ build_client () {
 
     mkdir $CLINAMEIDNY
     mv client.conf $CLINAMEIDNY
-    cp easy-rsa/keys/{ta.key,ca.crt,$CLINAME.crt,$CLINAME.key} $CLINAMEIDNY
+    cp easy-rsa/keys/{dh*.pem,ta.key,ca.crt,$CLINAME.crt,$CLINAME.key} $CLINAMEIDNY
     tar cvfz $CLINAMEIDNY.tar.gz $CLINAMEIDNY
 
     echo -e "\033[0m";
