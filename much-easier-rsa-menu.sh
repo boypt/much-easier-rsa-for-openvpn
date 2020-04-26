@@ -1,7 +1,11 @@
 #!/bin/bash
 
-OPENVPNEXAMPLE_LIST="/usr/share/openvpn/examples/ /usr/share/doc/openvpn/examples/sample-config-files/"
-EASYRSA_LIST="/usr/share/easy-rsa/ /usr/share/doc/openvpn/examples/easy-rsa/2.0/"
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+__base="$(basename ${__file} .sh)"
+
+OPENVPNEXAMPLE_LIST="$__dir /usr/share/doc/openvpn-2.4.8/sample/sample-config-files /usr/share/openvpn/examples/ /usr/share/doc/openvpn/examples/sample-config-files/"
+EASYRSA_LIST="$__dir/EasyRSA-2.2.2 /usr/share/easy-rsa/ /usr/share/doc/openvpn/examples/easy-rsa/2.0/"
 
 PORT="9812"
 SERVERIP="4.3.2.1"
@@ -25,7 +29,7 @@ msg_bold () {
 
 #path test
 for P in $OPENVPNEXAMPLE_LIST; do
-    if [[ -d $P ]]; then
+    if [[ -d $P ]] && [[ -f $P/server.conf ]] && [[  -f $P/client.conf  ]] ; then
         OPENVPNEXAMPLE=$P
         break
     fi
@@ -98,6 +102,7 @@ else
     read VPN_NAME
 
     cp -r $EASYRSA $TEMPDIR/easy-rsa
+    cp /etc/ssl/openssl.cnf $TEMPDIR/easy-rsa
     cd easy-rsa
     sed "s/--interact //" -i build-ca build-key build-key-server
 
@@ -171,18 +176,31 @@ build_client () {
     cd ..
     cp $OPENVPNEXAMPLE/client.conf .
 
-    sed "s/^remote.\+/remote $SERVERIP $PORT/;
-    s/^cert.\+/cert $CLINAME.crt/;
-    s/^key.\+/key $CLINAME.key/;
-    s/^;\(tls-auth.\+$\)/\1/" -i client.conf 
+#    sed "s/^remote.\+/remote $SERVERIP $PORT/;
+#    s/^cert.\+/cert $CLINAME.crt/;
+#    s/^key.\+/key $CLINAME.key/;
+#    s/^;\(tls-auth.\+$\)/\1/" -i client.conf 
 
-    mkdir $CLINAMEIDNY
-    mv client.conf $CLINAMEIDNY
-    cp easy-rsa/keys/{dh*.pem,ta.key,ca.crt,$CLINAME.crt,$CLINAME.key} $CLINAMEIDNY
-    tar cvfz $CLINAMEIDNY.tar.gz $CLINAMEIDNY
+    sed "s/^remote.\+/remote $SERVERIP $PORT/;
+    s/^ca .\+/ca [inline]/;
+    s/^cert.\+/cert [inline]/;
+    s/^key.\+/key [inline]/;
+    s/^tls-auth.\+/tls-auth [inline] 1/" -i client.conf
+
+    (
+echo "<ca>"; cat easy-rsa/keys/ca.crt; echo "</ca>";
+echo "<cert>"; cat easy-rsa/keys/${CLINAME}.crt; echo "</cert>";
+echo "<key>"; cat easy-rsa/keys/${CLINAME}.key; echo "</key>";
+echo "<tls-auth>"; cat easy-rsa/keys/ta.key; echo "</tls-auth>"
+    ) >> client.conf
+
+    #mkdir $CLINAMEIDNY
+    mv client.conf client_${CLINAMEIDNY}.ovpn
+    #cp easy-rsa/keys/{dh*.pem,ta.key,ca.crt,$CLINAME.crt,$CLINAME.key} $CLINAMEIDNY
+    #tar cvfz $CLINAMEIDNY.tar.gz $CLINAMEIDNY
 
     echo -e "\033[0m";
-    echo "Packed Client key: $CLINAMEIDNY.tar.gz"
+    echo "Packed Client key: client_${CLINAMEIDNY}.ovpn"
 }
 
 while true; do
@@ -221,7 +239,7 @@ while true; do
           msg_bold "All works saved in '$TAR'"
           msg_bold "Working Dir: $TEMPDIR"
           msg_bold "Packages are ready: "
-          ls $TEMPDIR/*.tar.gz
+          ls $TEMPDIR/*.tar.gz $TEMPDIR/*.ovpn
           msg_warn "Save them to a safe place."
           echo 
           msg_useful
